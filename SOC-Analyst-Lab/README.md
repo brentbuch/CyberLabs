@@ -362,7 +362,9 @@ Run:
 ```bash
 whoami
 ```
-This will check if our rule worked to kill the parent process. If our rule was successful, the shell should hang at this command or be terminated. 
+This will check if our rule worked to kill the parent process. If our rule was successful,the shell should hang at this command or be terminated. 
+
 <img width="627" alt="blocksuccess" src="https://github.com/brentbuch/CyberLabs/assets/142106637/dfbde156-101f-4bd7-8dea-355227cb9317">
+
 Terminate the connection with CTRL + C. We have now successfully created an active response rule.
 
