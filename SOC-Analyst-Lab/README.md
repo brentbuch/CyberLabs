@@ -167,7 +167,7 @@ Name: windows-sysmon-logs
 Platforms: Windows
 Path Pattern: wel://Microsoft-Windows-Sysmon/Operational:*
 Retention Period: 10
-``
+```
 
 <img width="775" alt="ArtifactRule" src="https://github.com/brentbuch/CyberLabs/assets/142106637/b81f2b80-7e7a-4f5b-974f-c8609740f6ba">
 
