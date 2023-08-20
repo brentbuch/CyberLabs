@@ -1,11 +1,12 @@
 # SOC Analyst Lab
 This lab is meant to simulate a SOC environment. It utilizes two small virtual machines and LimaCharlie’s SecOps Cloud Platform.
-## Languages Used
-- 
+
 ## Environments Used
 - Proxmox VE (8.0.3)
 - Windows 
 - Ubuntu Server (22.04)
+- LimaCharlie
+  
 ## I. Setup Virtual Environment
 1. Setup your virtual environment. I prefer Proxmox, but you can also use VMWare, VirtualBox, etc.
 2. Create Windows 10 VM. 
