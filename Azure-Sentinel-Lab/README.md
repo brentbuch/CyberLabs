@@ -1,13 +1,14 @@
-# Azure Sentinel SIEM Lab
+# Microsoft Sentinel SIEM Lab
 
-This lab is meant to familiarize with Azure and Azure Sentinel. The lab is based off of the original project by [Josh Madakor](https://www.youtube.com/@JoshMadakor), although Azure has changed since the original video was uploaded, so this readme is updated as of September 2023.  We will be setting up an instance of Azure Sentinel as well as a honeypot VM exposed to the internet. Logs will be ingested to Azure Log Analytics Workspace. The goal is to monitor incoming activity to the honeypot and plot the threats on a world map based on originating location. In the future, I would like to expand this lab to take advantage of other Azure Sentinel functionality. For the purposes of shortening this lab, the Azure account has already been created.
+This lab is meant to familiarize with Azure and Azure Sentinel. The lab is based off of the original project by [Josh Madakor](https://www.youtube.com/@JoshMadakor), although Azure has changed since the original video was uploaded, so after some additional research, this readme is updated as of September 2023.  We will be setting up an instance of Microsoft Sentinel as well as a honeypot VM exposed to the internet. Logs will be parsed and ingested to Azure Log Analytics Workspace via a PowerShell script. The goal is to monitor incoming activity to the honeypot and plot the threats on a world map based on originating location. I expand upon the original project by then setting a custom alert that detects brute force attacks and creates incidents inside Sentinel grouped by originating IP address.
 
 ## Environments and Tools Used
 
 - Azure VM
 - Azure Log Analytics Workspaces
-- Azure Sentinel
+- Microsoft Sentinel (SIEM)
 - Powershell
+- Kusto Query Language (KQL)
 
 ## I. Create Honeypot VM
 
@@ -138,6 +139,40 @@ Failed_RDP_CL
 5. We should now be able to see our failed logins populating on the map. The larger the dot, the more logins attempted from that area.
 <img width="850" alt="worldmap1" src="https://github.com/brentbuch/CyberLabs/assets/142106637/e616ec0e-9cc6-4a51-9516-1d6145611af7">
 
-6. After letting the VM run for several more hours we come back and check the map.
+6. When I came back to check the VM the next day I was having issues logging in, and the World Map Workbook was showing 'The query returned no results.' From what I could tell, the free tier VM was running out of resources. The free machine was 1 cpu core and 1GB of RAM. I had to upgrade the VM size in Azure which was easy. Navigate to the VM, click size, pick a new size VM, and then click resize. I chose a machine with 2 CPU cores and 4GB of RAM. 
+<img width="1269" alt="vmsize" src="https://github.com/brentbuch/CyberLabs/assets/142106637/000bf3e4-2675-4c22-95e8-b93f3abe5976">
+
+7. After upgrading the VM, it rebooted and I was once again able to login. By this point the machine was receiving so many login attempts that it exceeding the 1000 request limit per day of ipgeolocation.io. 
+<img width="1265" alt="worldmap2" src="https://github.com/brentbuch/CyberLabs/assets/142106637/fb77ebb5-2a6e-4508-9fab-40cb99e33e7b">
+
+## VI. Setting up Alerts in Sentinel
+
+Now we're going to setup alerts for failed logins. We know that the failed logins come in as Event ID 4625. We will use that as the basis for our alert. 
+
+1. Inside Sentinel, click on 'Analytics' and then 'Create.' From the drop down select 'Scheduled query rule' to open the Analytics Rule Wizard.
+<img width="1273" alt="alerts1" src="https://github.com/brentbuch/CyberLabs/assets/142106637/8c232a68-1af2-44e0-9ff9-85bb9846e8e8">
+
+2. On the next page, give the rule a name and description. Set the Severity, and under Tactics and Techniques, I have selected Brute Force. Click Next
+<img width="1271" alt="alerts2" src="https://github.com/brentbuch/CyberLabs/assets/142106637/701b9c2c-3df8-40e2-881e-129eb1562541">
+
+3. Now we set the rule logic. The Rule query is created using Kusto Query Language (KQL). I used the simple rule below, but I'm sure there are probably other, more detailed rules that would apply. For entity mapping, map the Host to Computer, Account to Account, and the IP to IpAddress. Query scheduling can be set to run every 5 minutes and include data for the last 5 hours. Start running set to 'Immediately.' Alert Threshold set to 'is greater than' '0.' Event grouping should be set to 'Group all events into a single event' to prevent multiple incidents for the same alert. Click next when finished. 
+
+```
+SecurityEvent
+| where EventID == 4625
+| summarize FailedLogins = count() by Account,Computer, IpAddress
+| where FailedLogins > 3
+```
+<img width="1273" alt="rulequery1" src="https://github.com/brentbuch/CyberLabs/assets/142106637/21676a45-b1ea-4807-9961-2a85dec03d91">
+<img width="1274" alt="rulequery2" src="https://github.com/brentbuch/CyberLabs/assets/142106637/dbbde3c0-036c-4875-a158-6d4fb1b9834f">
+
+4. Incident settings should be enabled. Alert grouping should also be enabled. Limit group alerts time frame is set to 5 hours, and 'Group alerts into a single incident if all entities match' is checked. Click Next
+<img width="1254" alt="incidentsettings" src="https://github.com/brentbuch/CyberLabs/assets/142106637/04734316-d195-4b19-99b0-f7558740abf4">
+
+5. We will leave the Automation rules empty for now. Click Next, and on the next page you should see 'Validation passed' and then save. 
+<img width="1260" alt="saverule" src="https://github.com/brentbuch/CyberLabs/assets/142106637/cb1d7ed3-d25c-491c-9a71-998ca8067530">
+
+6. If we navigate to Incidents, we see that our new alert has created several incidents which we can now take action against. 
+<img width="1280" alt="incidents" src="https://github.com/brentbuch/CyberLabs/assets/142106637/813d6e3a-34d0-4a8b-913e-c7230f02e0d5">
 
 <https://learn.microsoft.com/en-us/azure/defender-for-cloud/working-with-log-analytics-agent>
